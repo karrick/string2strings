@@ -1,4 +1,4 @@
-package main
+package string2strings
 
 import (
 	"encoding/json"
