@@ -1,3 +1,5 @@
+// Package string2strings provides concurrency safe implementation of
+// a map of strings to slices of strings.
 package string2strings
 
 import (
@@ -12,14 +14,33 @@ type StringToStrings struct {
 	sorted bool
 }
 
+// NewStringToStrings returns an initialized instance that maintains
+// value strings in insertion order.
 func NewStringToStrings() *StringToStrings {
 	return &StringToStrings{db: make(map[string][]string)}
 }
 
+// NewStringToStrings returns an initialized instance that maintains
+// value strings in lexicographical order.
 func NewStringToSortedStrings() *StringToStrings {
 	return &StringToStrings{db: make(map[string][]string), sorted: true}
 }
 
+// MarshallJSON implements Marshaler interface for converting instance
+// to JSON. This method is called by json.Marshal().
+//
+//     db := NewString2Strings()
+//     bytes, err := json.Marshal(db)
+//
+func (self *StringToStrings) MarshalJSON() ([]byte, error) {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+	bytes, err := json.Marshal(self.db)
+	return bytes, err
+}
+
+// Get returns the list of strings associated with the specified key
+// string.
 func (self *StringToStrings) Get(key string) ([]string, bool) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
@@ -27,6 +48,9 @@ func (self *StringToStrings) Get(key string) ([]string, bool) {
 	return v, ok
 }
 
+// Append either appends, when unsorted, or inserts, when sorted, the
+// value to the slice of strings associated with the specified key
+// string.
 func (self *StringToStrings) Append(key, value string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
@@ -49,6 +73,10 @@ func addItemToSortedList(item string, list []string) []string {
 	}
 }
 
+// Keys returns a slice of strings representing the keys held in a
+// String2Strings instance. Note that the order of the keys returns is
+// indeterminant because of Go's conscience decision to randomize map
+// key values.
 func (self *StringToStrings) Keys() (keys []string) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
@@ -59,27 +87,28 @@ func (self *StringToStrings) Keys() (keys []string) {
 	return
 }
 
-func (self *StringToStrings) MarshalJSON() ([]byte, error) {
-	self.lock.RLock()
-	defer self.lock.RUnlock()
-	bytes, err := json.Marshal(self.db)
-	return bytes, err
-}
-
-func (self *StringToStrings) ScrubKey(datum string) {
+// ScrubKey removes the specified key from the instance, also removing
+// the slice of strings associated with that key.
+func (self *StringToStrings) ScrubKey(key string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	delete(self.db, datum)
+	delete(self.db, key)
 }
 
-func (self *StringToStrings) ScrubValue(datum string) {
+// ScrubValue removes the specified value from all slices of strings
+// in the instance. This handles both sorted and unsorted
+// instances. Whereas the removal of a value from a sorted instance
+// uses a binary tree to quickly remove the item, the removal of a
+// value from an unsorted instance requires walking each slice of
+// strings for each key in the instance.
+func (self *StringToStrings) ScrubValue(value string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	for key, list := range self.db {
 		if self.sorted {
-			index := sort.SearchStrings(list, datum)
-			if index < len(list) && list[index] == datum {
+			index := sort.SearchStrings(list, value)
+			if index < len(list) && list[index] == value {
 				list = append(list[:index], list[index+1:]...)
 				if len(list) == 0 {
 					delete(self.db, key)
@@ -88,15 +117,15 @@ func (self *StringToStrings) ScrubValue(datum string) {
 				}
 			}
 		} else {
-			for index, value := range list {
-				if value == datum {
+			for index, val := range list {
+				if val == value {
 					list = append(list[:index], list[index+1:]...)
 					if len(list) == 0 {
 						delete(self.db, key)
 					} else {
 						self.db[key] = list
 					}
-					// NOTE: if values are unique in a list, then can break
+					// NOTE: if values are unique in a list, then could break
 				}
 			}
 		}
