@@ -4,6 +4,7 @@ package string2strings
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"sync"
 )
@@ -29,7 +30,7 @@ func NewStringToSortedStrings() *StringToStrings {
 // MarshallJSON implements Marshaler interface for converting instance
 // to JSON. This method is called by json.Marshal().
 //
-//     db := NewString2Strings()
+//     db := NewStringToStrings()
 //     bytes, err := json.Marshal(db)
 //
 func (self *StringToStrings) MarshalJSON() ([]byte, error) {
@@ -37,6 +38,12 @@ func (self *StringToStrings) MarshalJSON() ([]byte, error) {
 	defer self.lock.RUnlock()
 	bytes, err := json.Marshal(self.db)
 	return bytes, err
+}
+
+func (self *StringToStrings) String() string {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+	return fmt.Sprintf("%v", self.db)
 }
 
 // Get returns the list of strings associated with the specified key
@@ -55,26 +62,31 @@ func (self *StringToStrings) Append(key, value string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	if self.sorted {
-		self.db[key] = addItemToSortedList(value, self.db[key])
+		self.db[key] = insertStringToSortedStrings(value, self.db[key])
 	} else {
 		self.db[key] = append(self.db[key], value)
 	}
 }
 
-func addItemToSortedList(item string, list []string) []string {
+func insertStringToSortedStrings(item string, list []string) []string {
 	index := sort.SearchStrings(list, item)
 	if index == len(list) || list[index] != item {
-		newList := append(make([]string, 0, 1+len(list)), list[:index]...)
-		newList = append(newList, item)
-		newList = append(newList, list[index:]...)
-		return newList
-	} else {
-		return list
+		// Grow list by one element. We'll use item but it
+		// could be the empty string because it will be
+		// overwritten.
+		list = append(list, item)
+
+		// Shift elements down one slot.
+		copy(list[index+1:], list[index:])
+
+		// Insert item into proper position.
+		list[index] = item
 	}
+	return list
 }
 
 // Keys returns a slice of strings representing the keys held in a
-// String2Strings instance. Note that the order of the keys returns is
+// StringToStrings instance. Note that the order of the keys returns is
 // indeterminant because of Go's conscience decision to randomize map
 // key values.
 func (self *StringToStrings) Keys() (keys []string) {

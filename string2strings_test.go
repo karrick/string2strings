@@ -2,6 +2,7 @@ package string2strings
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"testing"
 )
@@ -288,7 +289,18 @@ func TestScrubValueSingleFromMultipleUnsorted(t *testing.T) {
 
 	actual := string(bytes)
 	expected := `{"foo":["bar"]}`
-	if actual != expected {
+	if expected != actual {
+		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
+	}
+}
+
+func TestString(t *testing.T) {
+	db := NewStringToStrings()
+	db.Append("foo", "bar")
+
+	actual := fmt.Sprint(db)
+	expected := "map[foo:[bar]]"
+	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
 }
