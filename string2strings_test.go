@@ -65,33 +65,8 @@ func TestAppendOnExistingKey(t *testing.T) {
 	}
 }
 
-func TestAppendKeepsStringsSortedInsertionOrder(t *testing.T) {
-	db := NewStringToStrings()
-
-	db.Append("key", "value3")
-	db.Append("key", "value1")
-	db.Append("key", "value2")
-
-	actual, ok := db.Get("key")
-	if ok != true {
-		t.Errorf("Expected: %v; Actual: %v\n", true, ok)
-	}
-	if len(actual) != 3 {
-		t.Errorf("Expected: %v; Actual: %v\n", 3, len(actual))
-	}
-	if actual[0] != "value3" {
-		t.Errorf("Expected: %v; Actual: %v\n", "value3", actual[0])
-	}
-	if actual[1] != "value1" {
-		t.Errorf("Expected: %v; Actual: %v\n", "value1", actual[1])
-	}
-	if actual[2] != "value2" {
-		t.Errorf("Expected: %v; Actual: %v\n", "value2", actual[2])
-	}
-}
-
 func TestAppendKeepsStringsSorted(t *testing.T) {
-	db := NewStringToSortedStrings()
+	db := NewStringToStrings()
 
 	db.Append("key", "value3")
 	db.Append("key", "value1")
@@ -220,7 +195,7 @@ func TestScrubKey(t *testing.T) {
 }
 
 func TestScrubValueMissing(t *testing.T) {
-	db := NewStringToSortedStrings()
+	db := NewStringToStrings()
 	db.Append("foo", "bar")
 
 	db.ScrubValue("foo")
@@ -238,7 +213,7 @@ func TestScrubValueMissing(t *testing.T) {
 }
 
 func TestScrubValueSingleFromSingle(t *testing.T) {
-	db := NewStringToSortedStrings()
+	db := NewStringToStrings()
 	db.Append("foo", "bar")
 
 	db.ScrubValue("bar")
@@ -256,7 +231,7 @@ func TestScrubValueSingleFromSingle(t *testing.T) {
 }
 
 func TestScrubValueSingleFromMultiple(t *testing.T) {
-	db := NewStringToSortedStrings()
+	db := NewStringToStrings()
 	db.Append("foo", "bar")
 	db.Append("foo", "baz")
 

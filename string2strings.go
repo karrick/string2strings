@@ -5,26 +5,18 @@ package string2strings
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"sync"
 )
 
 type StringToStrings struct {
-	db     map[string][]string
-	lock   sync.RWMutex
-	sorted bool
-}
-
-// NewStringToStrings returns an initialized instance that maintains
-// value strings in insertion order.
-func NewStringToStrings() *StringToStrings {
-	return &StringToStrings{db: make(map[string][]string)}
+	db   map[string]SortedStrings
+	lock sync.RWMutex
 }
 
 // NewStringToStrings returns an initialized instance that maintains
 // value strings in lexicographical order.
-func NewStringToSortedStrings() *StringToStrings {
-	return &StringToStrings{db: make(map[string][]string), sorted: true}
+func NewStringToStrings() *StringToStrings {
+	return &StringToStrings{db: make(map[string]SortedStrings)}
 }
 
 // MarshallJSON implements Marshaler interface for converting instance
@@ -48,7 +40,7 @@ func (self *StringToStrings) String() string {
 
 // Get returns the list of strings associated with the specified key
 // string.
-func (self *StringToStrings) Get(key string) ([]string, bool) {
+func (self *StringToStrings) Get(key string) (SortedStrings, bool) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 	v, ok := self.db[key]
@@ -61,28 +53,7 @@ func (self *StringToStrings) Get(key string) ([]string, bool) {
 func (self *StringToStrings) Append(key, value string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	if self.sorted {
-		self.db[key] = insertStringToSortedStrings(value, self.db[key])
-	} else {
-		self.db[key] = append(self.db[key], value)
-	}
-}
-
-func insertStringToSortedStrings(item string, list []string) []string {
-	index := sort.SearchStrings(list, item)
-	if index == len(list) || list[index] != item {
-		// Grow list by one element. We'll use item but it
-		// could be the empty string because it will be
-		// overwritten.
-		list = append(list, item)
-
-		// Shift elements down one slot.
-		copy(list[index+1:], list[index:])
-
-		// Insert item into proper position.
-		list[index] = item
-	}
-	return list
+	self.db[key] = self.db[key].Insert(value)
 }
 
 // Keys returns a slice of strings representing the keys held in a
@@ -118,28 +89,11 @@ func (self *StringToStrings) ScrubValue(value string) {
 	defer self.lock.Unlock()
 
 	for key, list := range self.db {
-		if self.sorted {
-			index := sort.SearchStrings(list, value)
-			if index < len(list) && list[index] == value {
-				list = append(list[:index], list[index+1:]...)
-				if len(list) == 0 {
-					delete(self.db, key)
-				} else {
-					self.db[key] = list
-				}
-			}
+		list = list.Delete(value)
+		if len(list) == 0 {
+			delete(self.db, key)
 		} else {
-			for index, val := range list {
-				if val == value {
-					list = append(list[:index], list[index+1:]...)
-					if len(list) == 0 {
-						delete(self.db, key)
-					} else {
-						self.db[key] = list
-					}
-					// NOTE: if values are unique in a list, then could break
-				}
-			}
+			self.db[key] = list
 		}
 	}
 }
