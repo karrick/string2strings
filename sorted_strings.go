@@ -2,6 +2,7 @@ package string2strings
 
 import (
 	"sort"
+	"strings"
 )
 
 type SortedStrings []string
@@ -40,4 +41,8 @@ func (list SortedStrings) Delete(value string) SortedStrings {
 		list = append(list[:index], list[index+1:]...)
 	}
 	return list
+}
+
+func (list SortedStrings) String() string {
+	return strings.Join(list, ",")
 }
