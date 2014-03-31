@@ -85,6 +85,13 @@ func (self *StringToStrings) ScrubKey(key string) {
 // value from an unsorted instance requires walking each slice of
 // strings for each key in the instance.
 func (self *StringToStrings) ScrubValue(value string) {
+	// NOTE: Alternate, less efficient implementation:
+	// NOTE: Subroutine does the locking for this one.
+	// for key := range self.db {
+	// 	self.ScrubValueFromKey(value, key)
+	// }
+	// return
+
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -96,4 +103,18 @@ func (self *StringToStrings) ScrubValue(value string) {
 			self.db[key] = list
 		}
 	}
+}
+
+func (self *StringToStrings) ScrubValueFromKey(value, key string) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	list := self.db[key]
+	list = list.Delete(value)
+	if len(list) == 0 {
+		delete(self.db, key)
+	} else {
+		self.db[key] = list
+	}
+
 }

@@ -7,6 +7,44 @@ import (
 	"testing"
 )
 
+func TestStringToStringsStringUninitialized(t *testing.T) {
+	db := NewStringToStrings()
+
+	actual := fmt.Sprint(db)
+	expected := "map[]"
+	if expected != actual {
+		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
+	}
+}
+
+func TestStringToStringsString(t *testing.T) {
+	db := NewStringToStrings()
+	db.Append("foo", "flux")
+	db.Append("foo", "bar")
+
+	actual := fmt.Sprint(db)
+	expected := "map[foo:[bar,flux]]"
+	if expected != actual {
+		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
+	}
+}
+
+func TestMarshalJSON(t *testing.T) {
+	db := NewStringToStrings()
+	db.Append("foo", "bar")
+
+	bytes, err := json.Marshal(db)
+	if err != nil {
+		t.Errorf("Expected: %#v; Actual: %#v\n", nil, err)
+	}
+
+	actual := string(bytes)
+	expected := `{"foo":["bar"]}`
+	if actual != expected {
+		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
+	}
+}
+
 func TestGetEmptyDb(t *testing.T) {
 	db := NewStringToStrings()
 
@@ -143,22 +181,6 @@ func TestKeysMultipleItems(t *testing.T) {
 	}
 }
 
-func TestMarshalJSON(t *testing.T) {
-	db := NewStringToStrings()
-	db.Append("foo", "bar")
-
-	bytes, err := json.Marshal(db)
-	if err != nil {
-		t.Errorf("Expected: %#v; Actual: %#v\n", nil, err)
-	}
-
-	actual := string(bytes)
-	expected := `{"foo":["bar"]}`
-	if actual != expected {
-		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
-	}
-}
-
 func TestScrubKeyMissing(t *testing.T) {
 	db := NewStringToStrings()
 
@@ -198,7 +220,7 @@ func TestScrubValueMissing(t *testing.T) {
 	db := NewStringToStrings()
 	db.Append("foo", "bar")
 
-	db.ScrubValue("foo")
+	db.ScrubValue("baz")
 
 	bytes, err := json.Marshal(db)
 	if err != nil {
@@ -269,12 +291,14 @@ func TestScrubValueSingleFromMultipleUnsorted(t *testing.T) {
 	}
 }
 
-func TestString(t *testing.T) {
+func TestScrubValueFromKey(t *testing.T) {
 	db := NewStringToStrings()
 	db.Append("foo", "bar")
+	db.Append("baz", "bar")
+	db.ScrubValueFromKey("bar", "foo")
 
-	actual := fmt.Sprint(db)
-	expected := "map[foo:[bar]]"
+	actual := db.String()
+	expected := "map[baz:[bar]]"
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}

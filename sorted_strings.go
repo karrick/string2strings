@@ -1,22 +1,27 @@
 package string2strings
 
 import (
+	"bytes"
 	"sort"
 	"strings"
 )
 
 type SortedStrings []string
 
-func NewSortedStrings(values []string) SortedStrings {
-	list := make([]string, len(values))
-	copy(list, values)
-	return SortedStrings(list)
+func NewSortedStrings() SortedStrings {
+	var sorted SortedStrings
+	return sorted
+}
+
+func NewSortedStringsFromStrings(values []string) SortedStrings {
+	var sorted SortedStrings
+	for _, value := range values {
+		sorted = sorted.Insert(value)
+	}
+	return sorted
 }
 
 func (list SortedStrings) Insert(value string) SortedStrings {
-	if list == nil {
-		list = make(SortedStrings, 0)
-	}
 	index := sort.SearchStrings(list, value)
 	if index == len(list) || list[index] != value {
 		// Grow list by one element. We'll use string's zero
@@ -33,9 +38,6 @@ func (list SortedStrings) Insert(value string) SortedStrings {
 }
 
 func (list SortedStrings) Delete(value string) SortedStrings {
-	// if list == nil {
-	// 	list = make(SortedStrings, 0)
-	// }
 	index := sort.SearchStrings(list, value)
 	if index < len(list) && list[index] == value {
 		list = append(list[:index], list[index+1:]...)
@@ -44,5 +46,9 @@ func (list SortedStrings) Delete(value string) SortedStrings {
 }
 
 func (list SortedStrings) String() string {
-	return strings.Join(list, ",")
+	var blob bytes.Buffer
+	blob.WriteRune('[')
+	blob.WriteString(strings.Join(list, ","))
+	blob.WriteRune(']')
+	return blob.String()
 }
