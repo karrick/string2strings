@@ -2,6 +2,7 @@ package string2strings
 
 import (
 	"bytes"
+	"encoding/json"
 	"sort"
 	"strings"
 )
@@ -51,4 +52,13 @@ func (list SortedStrings) String() string {
 	blob.WriteString(strings.Join(list, ","))
 	blob.WriteRune(']')
 	return blob.String()
+}
+
+func (list SortedStrings) MarshalJSON() ([]byte, error) {
+	if len(list) > 0 {
+		bytes, err := json.Marshal([]string(list))
+		return bytes, err
+	}
+	blob := bytes.NewBufferString("[]")
+	return blob.Bytes(), nil
 }

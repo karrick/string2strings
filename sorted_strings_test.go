@@ -56,7 +56,7 @@ func TestSortedStringsUninitializedJSON(t *testing.T) {
 		t.Errorf("Expected: %#v; Actual: %#v\n", nil, err)
 	}
 	actual := string(blob)
-	expected := `null`
+	expected := `[]`
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
