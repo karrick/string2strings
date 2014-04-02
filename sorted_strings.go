@@ -15,11 +15,10 @@ func NewSortedStrings() SortedStrings {
 }
 
 func NewSortedStringsFromStrings(values []string) SortedStrings {
-	var sorted SortedStrings
-	for _, value := range values {
-		sorted = sorted.Insert(value)
-	}
-	return sorted
+	result := make([]string, len(values))
+	copy(result, values)
+	sort.Strings(result)
+	return SortedStrings(result)
 }
 
 func (list SortedStrings) Insert(value string) SortedStrings {
