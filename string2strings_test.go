@@ -23,8 +23,8 @@ func TestStringToStringsString(t *testing.T) {
 	expected := fmt.Sprintf("%v", sample)
 
 	db := NewStringToStrings()
-	db.Append("foo", "flux")
-	db.Append("foo", "bar")
+	db.Store("foo", "flux")
+	db.Store("foo", "bar")
 
 	actual := fmt.Sprint(db)
 	if expected != actual {
@@ -34,7 +34,7 @@ func TestStringToStringsString(t *testing.T) {
 
 func TestMarshalJSON(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
+	db.Store("foo", "bar")
 
 	bytes, err := json.Marshal(db)
 	if err != nil {
@@ -60,10 +60,10 @@ func TestGetEmptyDb(t *testing.T) {
 	}
 }
 
-func TestAppendOnMissingKey(t *testing.T) {
+func TestStoreOnMissingKey(t *testing.T) {
 	db := NewStringToStrings()
 
-	db.Append("key", "value")
+	db.Store("key", "value")
 
 	list, ok := db.Get("this key is not there")
 	if ok != false {
@@ -86,11 +86,11 @@ func TestAppendOnMissingKey(t *testing.T) {
 	}
 }
 
-func TestAppendOnExistingKey(t *testing.T) {
+func TestStoreOnExistingKey(t *testing.T) {
 	db := NewStringToStrings()
 
-	db.Append("key", "value1")
-	db.Append("key", "value2")
+	db.Store("key", "value1")
+	db.Store("key", "value2")
 
 	list, ok := db.Get("key")
 	if ok != true {
@@ -108,12 +108,12 @@ func TestAppendOnExistingKey(t *testing.T) {
 	}
 }
 
-func TestAppendKeepsStringsSorted(t *testing.T) {
+func TestStoreKeepsStringsSorted(t *testing.T) {
 	db := NewStringToStrings()
 
-	db.Append("key", "value3")
-	db.Append("key", "value1")
-	db.Append("key", "value2")
+	db.Store("key", "value3")
+	db.Store("key", "value1")
+	db.Store("key", "value2")
 
 	list, ok := db.Get("key")
 	if ok != true {
@@ -137,12 +137,12 @@ func TestAppendKeepsStringsSorted(t *testing.T) {
 func TestStoreOverwritesValue(t *testing.T) {
 	db := NewStringToStrings()
 
-	db.Append("key", "value3")
-	db.Append("key", "value1")
-	db.Append("key", "value2")
+	db.Store("key", "value3")
+	db.Store("key", "value1")
+	db.Store("key", "value2")
 
 	ss := NewSortedStringsFromStrings([]string{"abc", "def"})
-	db.Store("key", ss)
+	db.StoreStrings("key", ss)
 
 	list, ok := db.Get("key")
 	if ok != true {
@@ -172,7 +172,7 @@ func TestKeysEmpty(t *testing.T) {
 func TestKeysSingleItem(t *testing.T) {
 	db := NewStringToStrings()
 
-	db.Append("key1", "value1")
+	db.Store("key1", "value1")
 	actual := db.Keys()
 	if len(actual) != 1 {
 		t.Errorf("Expected: %v; Actual: %v\n", 1, len(actual))
@@ -182,7 +182,7 @@ func TestKeysSingleItem(t *testing.T) {
 	}
 
 	// single key with multiple values should also return only one key
-	db.Append("key1", "value2")
+	db.Store("key1", "value2")
 	actual = db.Keys()
 	if len(actual) != 1 {
 		t.Errorf("Expected: %v; Actual: %v\n", 1, len(actual))
@@ -195,10 +195,10 @@ func TestKeysSingleItem(t *testing.T) {
 func TestKeysMultipleItems(t *testing.T) {
 	db := NewStringToStrings()
 
-	db.Append("key1", "value1")
-	db.Append("key1", "value2")
-	db.Append("key2", "value1")
-	db.Append("key2", "value2")
+	db.Store("key1", "value1")
+	db.Store("key1", "value2")
+	db.Store("key2", "value1")
+	db.Store("key2", "value2")
 
 	actual := db.Keys()
 	if len(actual) != 2 {
@@ -232,7 +232,7 @@ func TestScrubKeyMissing(t *testing.T) {
 
 func TestScrubKey(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
+	db.Store("foo", "bar")
 
 	db.ScrubKey("foo")
 
@@ -250,7 +250,7 @@ func TestScrubKey(t *testing.T) {
 
 func TestScrubValueMissing(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
+	db.Store("foo", "bar")
 
 	db.ScrubValue("baz")
 
@@ -268,7 +268,7 @@ func TestScrubValueMissing(t *testing.T) {
 
 func TestScrubValueSingleFromSingle(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
+	db.Store("foo", "bar")
 
 	db.ScrubValue("bar")
 
@@ -286,8 +286,8 @@ func TestScrubValueSingleFromSingle(t *testing.T) {
 
 func TestScrubValueSingleFromMultiple(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
-	db.Append("foo", "baz")
+	db.Store("foo", "bar")
+	db.Store("foo", "baz")
 
 	db.ScrubValue("baz")
 
@@ -305,9 +305,9 @@ func TestScrubValueSingleFromMultiple(t *testing.T) {
 
 func TestScrubValueSingleFromMultipleUnsorted(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
-	db.Append("foo", "baz")
-	db.Append("quz", "baz")
+	db.Store("foo", "bar")
+	db.Store("foo", "baz")
+	db.Store("quz", "baz")
 
 	db.ScrubValue("baz")
 
@@ -325,8 +325,8 @@ func TestScrubValueSingleFromMultipleUnsorted(t *testing.T) {
 
 func TestScrubValueFromKey(t *testing.T) {
 	db := NewStringToStrings()
-	db.Append("foo", "bar")
-	db.Append("baz", "bar")
+	db.Store("foo", "bar")
+	db.Store("baz", "bar")
 	db.ScrubValueFromKey("bar", "foo")
 
 	actual := db.String()

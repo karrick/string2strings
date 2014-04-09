@@ -50,10 +50,10 @@ func (self *StringToStrings) Get(key string) (*SortedStrings, bool) {
 	return v, ok
 }
 
-// Append either appends, when unsorted, or inserts, when sorted, the
+// Store either appends, when unsorted, or inserts, when sorted, the
 // value to the slice of strings associated with the specified key
 // string.
-func (self *StringToStrings) Append(key, value string) {
+func (self *StringToStrings) Store(key, value string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -66,7 +66,7 @@ func (self *StringToStrings) Append(key, value string) {
 }
 
 // Store stores the entire list of SortedStrings at the specified key.
-func (self *StringToStrings) Store(key string, ss *SortedStrings) {
+func (self *StringToStrings) StoreStrings(key string, ss *SortedStrings) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
