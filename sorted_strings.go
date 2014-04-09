@@ -7,57 +7,60 @@ import (
 	"strings"
 )
 
-type SortedStrings []string
-
-func NewSortedStrings() SortedStrings {
-	var sorted SortedStrings
-	return sorted
+type SortedStrings struct {
+	list []string
 }
 
-func NewSortedStringsFromStrings(values []string) SortedStrings {
+func NewSortedStrings() *SortedStrings {
+	return new(SortedStrings)
+}
+
+func NewSortedStringsFromStrings(values []string) *SortedStrings {
 	result := make([]string, len(values))
 	copy(result, values)
 	sort.Strings(result)
-	return SortedStrings(result)
+	return &SortedStrings{list: result}
 }
 
-func (list SortedStrings) Insert(value string) SortedStrings {
-	index := sort.SearchStrings(list, value)
-	if index == len(list) || list[index] != value {
+func (self *SortedStrings) Store(value string) {
+	index := sort.SearchStrings(self.list, value)
+	if index == len(self.list) || self.list[index] != value {
 		// Grow list by one element. We'll use string's zero
 		// value for now because it will be overwritten.
-		list = append(list, "")
+		self.list = append(self.list, "")
 
 		// Shift elements down one slot.
-		copy(list[index+1:], list[index:])
+		copy(self.list[index+1:], self.list[index:])
 
 		// Insert value into proper position.
-		list[index] = value
+		self.list[index] = value
 	}
-	return list
 }
 
-func (list SortedStrings) Delete(value string) SortedStrings {
-	index := sort.SearchStrings(list, value)
-	if index < len(list) && list[index] == value {
-		list = append(list[:index], list[index+1:]...)
+func (self *SortedStrings) Delete(value string) {
+	index := sort.SearchStrings(self.list, value)
+	if index < len(self.list) && self.list[index] == value {
+		self.list = append(self.list[:index], self.list[index+1:]...)
 	}
-	return list
 }
 
-func (list SortedStrings) String() string {
+func (self *SortedStrings) Strings() []string {
+	return self.list
+}
+
+func (self *SortedStrings) String() string {
 	var blob bytes.Buffer
 	blob.WriteRune('[')
-	blob.WriteString(strings.Join(list, ","))
+	if len(self.list) > 0 {
+		blob.WriteString(strings.Join(self.list, " "))
+	}
 	blob.WriteRune(']')
 	return blob.String()
 }
 
-func (list SortedStrings) MarshalJSON() ([]byte, error) {
-	if len(list) > 0 {
-		bytes, err := json.Marshal([]string(list))
-		return bytes, err
+func (self *SortedStrings) MarshalJSON() ([]byte, error) {
+	if len(self.list) > 0 {
+		return json.Marshal(self.list)
 	}
-	blob := bytes.NewBufferString("[]")
-	return blob.Bytes(), nil
+	return []byte{'[', ']'}, nil
 }

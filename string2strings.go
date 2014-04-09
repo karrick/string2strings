@@ -9,14 +9,14 @@ import (
 )
 
 type StringToStrings struct {
-	db   map[string]SortedStrings
+	db   map[string]*SortedStrings
 	lock sync.RWMutex
 }
 
 // NewStringToStrings returns an initialized instance that maintains
 // value strings in lexicographical order.
 func NewStringToStrings() *StringToStrings {
-	return &StringToStrings{db: make(map[string]SortedStrings)}
+	return &StringToStrings{db: make(map[string]*SortedStrings)}
 }
 
 // MarshallJSON implements Marshaler interface for converting instance
@@ -28,6 +28,7 @@ func NewStringToStrings() *StringToStrings {
 func (self *StringToStrings) MarshalJSON() ([]byte, error) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
+
 	bytes, err := json.Marshal(self.db)
 	return bytes, err
 }
@@ -35,14 +36,16 @@ func (self *StringToStrings) MarshalJSON() ([]byte, error) {
 func (self *StringToStrings) String() string {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
+
 	return fmt.Sprintf("%v", self.db)
 }
 
 // Get returns the list of strings associated with the specified key
 // string.
-func (self *StringToStrings) Get(key string) (SortedStrings, bool) {
+func (self *StringToStrings) Get(key string) (*SortedStrings, bool) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
+
 	v, ok := self.db[key]
 	return v, ok
 }
@@ -53,7 +56,13 @@ func (self *StringToStrings) Get(key string) (SortedStrings, bool) {
 func (self *StringToStrings) Append(key, value string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	self.db[key] = self.db[key].Insert(value)
+
+	ss, ok := self.db[key]
+	if !ok {
+		ss = NewSortedStrings()
+		self.db[key] = ss
+	}
+	ss.Store(value)
 }
 
 // Keys returns a slice of strings representing the keys held in a
@@ -63,8 +72,9 @@ func (self *StringToStrings) Append(key, value string) {
 func (self *StringToStrings) Keys() (keys []string) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
+
 	keys = make([]string, 0, len(self.db))
-	for k, _ := range self.db {
+	for k := range self.db {
 		keys = append(keys, k)
 	}
 	return
@@ -75,6 +85,7 @@ func (self *StringToStrings) Keys() (keys []string) {
 func (self *StringToStrings) ScrubKey(key string) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
+
 	delete(self.db, key)
 }
 
@@ -90,17 +101,14 @@ func (self *StringToStrings) ScrubValue(value string) {
 	// for key := range self.db {
 	// 	self.ScrubValueFromKey(value, key)
 	// }
-	// return
 
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	for key, list := range self.db {
-		list = list.Delete(value)
-		if len(list) == 0 {
+		list.Delete(value)
+		if len(list.Strings()) == 0 {
 			delete(self.db, key)
-		} else {
-			self.db[key] = list
 		}
 	}
 }
@@ -110,11 +118,8 @@ func (self *StringToStrings) ScrubValueFromKey(value, key string) {
 	defer self.lock.Unlock()
 
 	list := self.db[key]
-	list = list.Delete(value)
-	if len(list) == 0 {
+	list.Delete(value)
+	if len(list.Strings()) == 0 {
 		delete(self.db, key)
-	} else {
-		self.db[key] = list
 	}
-
 }

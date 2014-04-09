@@ -2,27 +2,23 @@ package string2strings
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
-func TestSortedStringsInsertAddsFirstItem(t *testing.T) {
-	var list SortedStrings
-
-	list = list.Insert("foo")
-
-	if len(list) != 1 {
-		t.Errorf("Expected: %#v; Actual: %#v\n", 1, len(list))
-	}
-	if list[0] != "foo" {
-		t.Errorf("Expected: %#v; Actual: %#v\n", "foo", list[0])
+func TestSortedStringsEmptyList(t *testing.T) {
+	list := NewSortedStrings().Strings()
+	if len(list) != 0 {
+		t.Errorf("Expected: %#v; Actual: %#v\n", 0, len(list))
 	}
 }
 
 func TestSortedStringsNewThenInsertAddsFirstItem(t *testing.T) {
-	list := NewSortedStrings()
+	ss := NewSortedStrings()
 
-	list = list.Insert("foo")
+	ss.Store("foo")
 
+	list := ss.Strings()
 	if len(list) != 1 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 1, len(list))
 	}
@@ -32,66 +28,75 @@ func TestSortedStringsNewThenInsertAddsFirstItem(t *testing.T) {
 }
 
 func TestSortedStringsUninitializedString(t *testing.T) {
-	list := NewSortedStrings()
-	actual := list.String()
+	ss := NewSortedStrings()
+	actual := ss.String()
 	expected := "[]"
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
 }
 
-func TestSortedStringsString(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"def", "abc"})
-	actual := list.String()
-	expected := "[abc,def]"
+func TestSortedStringsStringReturnsSameAsFmtSprintf(t *testing.T) {
+	list := []string{"abc", "def"}
+	expected := fmt.Sprintf("%v", list)
+	ss := NewSortedStringsFromStrings(list)
+
+	actual := ss.String()
+
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
 }
 
 func TestSortedStringsUninitializedJSON(t *testing.T) {
-	list := NewSortedStrings()
+	list := []string{}
 	blob, err := json.Marshal(list)
+	expected := string(blob)
+
+	ss := NewSortedStrings()
+	blob, err = json.Marshal(ss)
 	if err != nil {
 		t.Errorf("Expected: %#v; Actual: %#v\n", nil, err)
 	}
 	actual := string(blob)
-	expected := `[]`
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
 }
 
 func TestSortedStringsJSON(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"def", "abc"})
-
+	list := []string{"abc", "def"}
 	blob, err := json.Marshal(list)
+	expected := string(blob)
+
+	ss := NewSortedStringsFromStrings(list)
+	blob, err = json.Marshal(ss)
 	if err != nil {
 		t.Errorf("Expected: %#v; Actual: %#v\n", nil, err)
 	}
 	actual := string(blob)
-	expected := `["abc","def"]`
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
-
 }
 
 func TestSortedStringsInsertDeleteFromZeroValue(t *testing.T) {
-	var list SortedStrings
+	ss := NewSortedStrings()
 
-	list = list.Delete("foo")
+	ss.Delete("foo")
 
+	list := ss.Strings()
 	if len(list) != 0 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 0, len(list))
 	}
 }
 
 func TestSortedStringsInsertInsertBeginning(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"b", "c"})
+	ss := NewSortedStringsFromStrings([]string{"b", "c"})
 
-	list = list.Insert("a")
+	ss.Store("a")
 
+	list := ss.Strings()
 	if len(list) != 3 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 3, len(list))
 	}
@@ -107,10 +112,11 @@ func TestSortedStringsInsertInsertBeginning(t *testing.T) {
 }
 
 func TestSortedStringsInsertInsertMiddle(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"a", "c"})
+	ss := NewSortedStringsFromStrings([]string{"a", "c"})
 
-	list = list.Insert("b")
+	ss.Store("b")
 
+	list := ss.Strings()
 	if len(list) != 3 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 3, len(list))
 	}
@@ -126,10 +132,11 @@ func TestSortedStringsInsertInsertMiddle(t *testing.T) {
 }
 
 func TestSortedStringsInsertInsertEnd(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"a", "b"})
+	ss := NewSortedStringsFromStrings([]string{"a", "b"})
 
-	list = list.Insert("c")
+	ss.Store("c")
 
+	list := ss.Strings()
 	if len(list) != 3 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 3, len(list))
 	}
@@ -145,10 +152,11 @@ func TestSortedStringsInsertInsertEnd(t *testing.T) {
 }
 
 func TestSortedStringsInsertNoRepeatBeginning(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"a", "b", "c"})
+	ss := NewSortedStringsFromStrings([]string{"a", "b", "c"})
 
-	list = list.Insert("a")
+	ss.Store("a")
 
+	list := ss.Strings()
 	if len(list) != 3 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 3, len(list))
 	}
@@ -164,10 +172,11 @@ func TestSortedStringsInsertNoRepeatBeginning(t *testing.T) {
 }
 
 func TestSortedStringsInsertNoRepeatMiddle(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"a", "b", "c"})
+	ss := NewSortedStringsFromStrings([]string{"a", "b", "c"})
 
-	list = list.Insert("b")
+	ss.Store("b")
 
+	list := ss.Strings()
 	if len(list) != 3 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 3, len(list))
 	}
@@ -183,10 +192,11 @@ func TestSortedStringsInsertNoRepeatMiddle(t *testing.T) {
 }
 
 func TestSortedStringsInsertNoRepeatEnd(t *testing.T) {
-	list := NewSortedStringsFromStrings([]string{"a", "b", "c"})
+	ss := NewSortedStringsFromStrings([]string{"a", "b", "c"})
 
-	list = list.Insert("c")
+	ss.Store("c")
 
+	list := ss.Strings()
 	if len(list) != 3 {
 		t.Errorf("Expected: %#v; Actual: %#v\n", 3, len(list))
 	}

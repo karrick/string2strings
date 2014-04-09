@@ -18,12 +18,15 @@ func TestStringToStringsStringUninitialized(t *testing.T) {
 }
 
 func TestStringToStringsString(t *testing.T) {
+	sample := make(map[string][]string)
+	sample["foo"] = []string{"bar", "flux"}
+	expected := fmt.Sprintf("%v", sample)
+
 	db := NewStringToStrings()
 	db.Append("foo", "flux")
 	db.Append("foo", "bar")
 
 	actual := fmt.Sprint(db)
-	expected := "map[foo:[bar,flux]]"
 	if expected != actual {
 		t.Errorf("Expected: %#v; Actual: %#v\n", expected, actual)
 	}
@@ -48,12 +51,12 @@ func TestMarshalJSON(t *testing.T) {
 func TestGetEmptyDb(t *testing.T) {
 	db := NewStringToStrings()
 
-	actual, ok := db.Get("")
+	list, ok := db.Get("")
 	if ok != false {
 		t.Errorf("Expected: %v; Actual: %v\n", false, ok)
 	}
-	if len(actual) != 0 {
-		t.Errorf("Expected: %v; Actual: %v\n", 0, len(actual))
+	if list != nil {
+		t.Errorf("Expected: %v; Actual: %v\n", nil, list)
 	}
 }
 
@@ -62,18 +65,19 @@ func TestAppendOnMissingKey(t *testing.T) {
 
 	db.Append("key", "value")
 
-	actual, ok := db.Get("this key is not there")
+	list, ok := db.Get("this key is not there")
 	if ok != false {
 		t.Errorf("Expected: %v; Actual: %v\n", false, ok)
 	}
-	if len(actual) != 0 {
-		t.Errorf("Expected: %v; Actual: %v\n", 0, len(actual))
+	if list != nil {
+		t.Errorf("Expected: %v; Actual: %v\n", nil, list)
 	}
 
-	actual, ok = db.Get("key")
+	list, ok = db.Get("key")
 	if ok != true {
 		t.Errorf("Expected: %v; Actual: %v\n", true, ok)
 	}
+	actual := list.Strings()
 	if len(actual) != 1 {
 		t.Errorf("Expected: %v; Actual: %v\n", 1, len(actual))
 	}
@@ -88,10 +92,11 @@ func TestAppendOnExistingKey(t *testing.T) {
 	db.Append("key", "value1")
 	db.Append("key", "value2")
 
-	actual, ok := db.Get("key")
+	list, ok := db.Get("key")
 	if ok != true {
 		t.Errorf("Expected: %v; Actual: %v\n", true, ok)
 	}
+	actual := list.Strings()
 	if len(actual) != 2 {
 		t.Errorf("Expected: %v; Actual: %v\n", 2, len(actual))
 	}
@@ -110,10 +115,11 @@ func TestAppendKeepsStringsSorted(t *testing.T) {
 	db.Append("key", "value1")
 	db.Append("key", "value2")
 
-	actual, ok := db.Get("key")
+	list, ok := db.Get("key")
 	if ok != true {
 		t.Errorf("Expected: %v; Actual: %v\n", true, ok)
 	}
+	actual := list.Strings()
 	if len(actual) != 3 {
 		t.Errorf("Expected: %v; Actual: %v\n", 3, len(actual))
 	}
