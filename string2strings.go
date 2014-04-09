@@ -65,6 +65,14 @@ func (self *StringToStrings) Append(key, value string) {
 	ss.Store(value)
 }
 
+// Store stores the entire list of SortedStrings at the specified key.
+func (self *StringToStrings) Store(key string, ss *SortedStrings) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	self.db[key] = ss
+}
+
 // Keys returns a slice of strings representing the keys held in a
 // StringToStrings instance. Note that the order of the keys returns is
 // indeterminant because of Go's conscience decision to randomize map

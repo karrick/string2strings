@@ -134,6 +134,32 @@ func TestAppendKeepsStringsSorted(t *testing.T) {
 	}
 }
 
+func TestStoreOverwritesValue(t *testing.T) {
+	db := NewStringToStrings()
+
+	db.Append("key", "value3")
+	db.Append("key", "value1")
+	db.Append("key", "value2")
+
+	ss := NewSortedStringsFromStrings([]string{"abc", "def"})
+	db.Store("key", ss)
+
+	list, ok := db.Get("key")
+	if ok != true {
+		t.Errorf("Expected: %v; Actual: %v\n", true, ok)
+	}
+	actual := list.Strings()
+	if len(actual) != 2 {
+		t.Errorf("Expected: %v; Actual: %v\n", 2, len(actual))
+	}
+	if actual[0] != "abc" {
+		t.Errorf("Expected: %v; Actual: %v\n", "abc", actual[0])
+	}
+	if actual[1] != "def" {
+		t.Errorf("Expected: %v; Actual: %v\n", "def", actual[1])
+	}
+}
+
 func TestKeysEmpty(t *testing.T) {
 	db := NewStringToStrings()
 
